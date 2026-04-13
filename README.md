@@ -14,6 +14,7 @@ Compared with the lighter initial community version, this build now does the fol
 - records per-session enforcement state during `before_prompt_build`
 - honors explicit plain/raw/minimal/no-formatting escape requests consistently
 - rewrites non-compliant assistant text before persistence when enforcement is active
+- formats rewritten replies into clearly separated body sections instead of a single undifferentiated bullet blob
 - keeps a short-lived rewrite cache so the **outbound delivered content** stays aligned with the rewritten persisted message
 - scopes rewrite cache lookups by **session + channel + original text** instead of raw text alone, which reduces accidental collisions across conversations
 - clears session-scoped state and cached rewrites on `session_end`
@@ -41,9 +42,9 @@ Use it for patterns like:
 
 It also works well for style contracts such as:
 
-- numbered next-step choices so users can reply with `1`, `2`, `3`, etc.
+- clearly separated body sections after the takeaway
 - optional use of 1–3 body emojis for section distinction or emphasis
-- warnings (⚠️), tips (💡), actions (👉), and success states (✅)
+- bold section labels like **✅ What’s verified**, **🌍 Why it matters**, **⚠️ What looks less certain**, and **📌 Source basis**
 
 ## Project structure
 
@@ -117,7 +118,7 @@ See also: [`examples/config.example.json`](./examples/config.example.json)
 - `requiredOpening` — opening-format rule
 - `requiredTakeaway` — top-line / takeaway rule
 - `listRule` — list-structure rule
-- `customGuidance` can include rules like numbered action choices and optional 1–3 body emojis for section distinction
+- `customGuidance` can include rules like sectioned body layouts and optional 1–3 body emojis for section distinction
 - `disallowedPatterns` — reply patterns to explicitly avoid
 - `customGuidance` — full custom text override if you want total control
 
@@ -135,6 +136,16 @@ If the current prompt includes a configured escape phrase like `plain`, `raw`, o
 
 - guidance injection
 - rewrite fallback
+
+### Sectioned rewrite output
+
+When the outgoing rewrite fallback triggers, the plugin now prefers a more structured body layout:
+
+- bold takeaway line near the top
+- blank lines between sections
+- bold section labels
+- short bullets under each section
+- source extraction for common news outlets when they appear in the text
 
 ### Rewrite fallback scope
 

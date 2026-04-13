@@ -41,6 +41,7 @@ test("registerStartupFormatGuard injects guidance and rewrites outgoing content"
   );
 
   assert.match(promptResult.appendSystemContext, /Guard:/);
+  assert.match(promptResult.appendSystemContext, /clearly separated body sections/i);
 
   const writeResult = beforeMessageWrite(
     {
@@ -50,7 +51,7 @@ test("registerStartupFormatGuard injects guidance and rewrites outgoing content"
         content: [
           {
             type: "text",
-            text: "Here is the latest. Revenue is up. Hiring is steady."
+            text: "Here is the latest. Revenue is up. Hiring is steady. Reuters says leadership expects margin improvement."
           }
         ]
       }
@@ -59,12 +60,14 @@ test("registerStartupFormatGuard injects guidance and rewrites outgoing content"
   );
 
   assert.ok(writeResult?.message?.content?.[0]?.text);
-  assert.match(writeResult.message.content[0].text, /^✨ \*\*Update\*\*/u);
+  const rewrittenText = writeResult.message.content[0].text;
+  assert.ok(rewrittenText.startsWith("📰 **News update**") || rewrittenText.startsWith("✨ **Update**"));
+  assert.match(rewrittenText, /\*\*(?:✅ What’s verified|✅ Key points)\*\*/u);
 
   const sendResult = messageSending(
     {
       sessionKey: "s1",
-      content: "Here is the latest. Revenue is up. Hiring is steady."
+      content: "Here is the latest. Revenue is up. Hiring is steady. Reuters says leadership expects margin improvement."
     },
     { sessionKey: "s1", channelId: "telegram" }
   );
@@ -121,7 +124,7 @@ test("session_end clears cached rewrites so later sends do not reuse stale conte
       sessionKey: "s3",
       message: {
         role: "assistant",
-        content: [{ type: "text", text: "Flat response. More detail follows." }]
+        content: [{ type: "text", text: "Flat response. More detail follows. Reuters says demand is steady." }]
       }
     },
     { sessionKey: "s3", channelId: "telegram" }
@@ -130,7 +133,7 @@ test("session_end clears cached rewrites so later sends do not reuse stale conte
   sessionEnd({ sessionKey: "s3" });
 
   const sendResult = messageSending(
-    { sessionKey: "s3", content: "Flat response. More detail follows." },
+    { sessionKey: "s3", content: "Flat response. More detail follows. Reuters says demand is steady." },
     { sessionKey: "s3", channelId: "telegram" }
   );
 

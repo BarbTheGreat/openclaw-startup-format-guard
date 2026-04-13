@@ -16,7 +16,7 @@
       "guidanceTitle": "Telegram house-format reinforcement:",
       "requiredOpening": "The first non-empty line must be an emoji-led fully bold header.",
       "requiredTakeaway": "The next line must be one short bold takeaway sentence.",
-      "listRule": "If there is more than one point, use bullets or numbering.",
+      "listRule": "After the takeaway, use clearly separated bold-labeled sections with short bullets when there is more than one point.",
       "disallowedPatterns": [
         "flat paragraph blobs",
         "dry status lines",

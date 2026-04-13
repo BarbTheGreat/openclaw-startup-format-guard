@@ -30,6 +30,19 @@ export const DEFAULT_CONFIG = {
   customGuidance: ""
 };
 
+const SOURCE_PATTERNS = [
+  ["Reuters", /\breuters\b/i],
+  ["AP", /\b(?:ap news|associated press|ap)\b/i],
+  ["BBC", /\bbbc\b/i],
+  ["CNN", /\bcnn\b/i],
+  ["NPR", /\bnpr\b/i],
+  ["Bloomberg", /\bbloomberg\b/i],
+  ["Financial Times", /\bfinancial times\b|\bft\b/i],
+  ["Wall Street Journal", /\bwall street journal\b|\bwsj\b/i],
+  ["The Guardian", /\bthe guardian\b|\bguardian\b/i],
+  ["New York Times", /\bnew york times\b|\bnyt\b/i]
+];
+
 export function normalizeConfig(pluginConfig = {}) {
   const config = { ...DEFAULT_CONFIG, ...(pluginConfig || {}) };
 
@@ -112,6 +125,9 @@ export function buildGuidance(config) {
     lines.push(`- Do not send: ${config.disallowedPatterns.join(", ")}.`);
   }
 
+  lines.push("- After the takeaway, use clearly separated body sections with blank lines between them when there is enough content.");
+  lines.push("- Section labels should be bold and may use 1–3 body emojis total for visual separation, such as **✅ What’s verified**, **🌍 Why it matters**, **⚠️ What looks less certain**, or **📌 Source basis**.");
+  lines.push("- Prefer short bullets under each section instead of dense paragraphs.");
   lines.push("- Unless the user explicitly requested plain/raw/minimal/no-emoji/no-formatting output, apply this to quick replies, updates, summaries, apologies, and tool-result summaries.");
   lines.push("- If a draft is flatter than the required format, rewrite it before sending.");
 
@@ -197,6 +213,19 @@ export function inferHeader(text) {
   return "✨ **Update**";
 }
 
+function inferSources(text) {
+  const normalized = stripMarkdownDecorators(text);
+  const sources = [];
+
+  for (const [name, pattern] of SOURCE_PATTERNS) {
+    if (pattern.test(normalized)) {
+      sources.push(name);
+    }
+  }
+
+  return sources;
+}
+
 export function isHouseFormatted(text) {
   const lines = String(text || "")
     .split(/\r?\n/)
@@ -209,8 +238,9 @@ export function isHouseFormatted(text) {
 
   const headerOk = /^\p{Extended_Pictographic}.*\*\*.+\*\*$/u.test(lines[0]);
   const takeawayOk = /^\*\*.+\*\*$/.test(lines[1]);
+  const hasSectionHeading = lines.slice(2).some((line) => /^\*\*[✅🌍⚠️📌💡🛠️].+\*\*$/.test(line));
 
-  return headerOk && takeawayOk;
+  return headerOk && takeawayOk && (lines.length <= 2 || hasSectionHeading);
 }
 
 function collectBulletCandidates(text) {
@@ -248,6 +278,39 @@ function collectBulletCandidates(text) {
   return items.map(cleanLine).filter(Boolean);
 }
 
+function buildSection(title, items) {
+  if (!items || items.length === 0) {
+    return [];
+  }
+
+  return [
+    `**${title}**`,
+    ...items.map((item) => `- ${item}`)
+  ];
+}
+
+function dedupeItems(items) {
+  const unique = [];
+  const seen = new Set();
+
+  for (const item of items) {
+    const normalized = trimSentence(item, 180);
+    if (!normalized) {
+      continue;
+    }
+
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    unique.push(normalized);
+  }
+
+  return unique;
+}
+
 export function formatHouseStyle(text) {
   const source = String(text || "").trim();
   if (!source) {
@@ -262,28 +325,32 @@ export function formatHouseStyle(text) {
   const firstSentence = splitIntoSentences(source)[0] || candidates[0] || source;
   const takeaway = trimSentence(firstSentence);
 
-  const remainder = candidates
-    .filter((item) => trimSentence(item).toLowerCase() !== takeaway.toLowerCase())
-    .map((item) => trimSentence(item, 180))
-    .filter(Boolean);
-
-  const uniqueRemainder = [];
-  const seen = new Set();
-  for (const item of remainder) {
-    const key = item.toLowerCase();
-    if (!seen.has(key)) {
-      seen.add(key);
-      uniqueRemainder.push(item);
-    }
-  }
+  const remainder = dedupeItems(
+    candidates.filter((item) => trimSentence(item).toLowerCase() !== takeaway.toLowerCase())
+  );
 
   const lines = [inferHeader(source), `**${takeaway}**`];
+  const sections = [];
+  const sources = inferSources(source);
+  const isNews = /^📰 /.test(lines[0]);
 
-  if (uniqueRemainder.length > 0) {
-    lines.push("");
-    lines.push(`- **${titleCase([uniqueRemainder.length > 1 ? "key points" : "detail"])}**`);
-    for (const item of uniqueRemainder.slice(0, 5)) {
-      lines.push(`  - ${item}`);
+  if (isNews) {
+    sections.push(buildSection("✅ What’s verified", remainder.slice(0, 3)));
+    sections.push(buildSection("🌍 Why it matters", remainder.slice(3, 6)));
+  } else {
+    sections.push(buildSection(`✅ ${titleCase([remainder.length > 1 ? "key points" : "key point"])}`, remainder.slice(0, 3)));
+    sections.push(buildSection("📌 Additional context", remainder.slice(3, 6)));
+  }
+
+  if (sources.length > 0) {
+    sections.push(buildSection("📌 Source basis", sources.map((item) => `**${item}**`)));
+  }
+
+  const renderedSections = sections.filter((section) => section.length > 0);
+  if (renderedSections.length > 0) {
+    for (const section of renderedSections) {
+      lines.push("");
+      lines.push(...section);
     }
   }
 

@@ -1,7 +1,7 @@
 {
   "id": "startup-format-guard",
   "name": "Startup Format Guard",
-  "description": "Reinforces configurable reply-format rules with prompt-time guidance plus a hardened outgoing rewrite fallback.",
+  "description": "Reinforces configurable reply-format rules with prompt-time guidance plus a hardened outgoing rewrite fallback and clearer body-section formatting.",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
