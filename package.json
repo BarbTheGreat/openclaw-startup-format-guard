@@ -1,0 +1,50 @@
+{
+  "name": "openclaw-startup-format-guard",
+  "version": "0.1.0",
+  "description": "Configurable OpenClaw plugin that reinforces house-format rules on startup and early-turn replies.",
+  "author": "BarbTheGreat",
+  "license": "MIT",
+  "homepage": "https://github.com/BarbTheGreat/openclaw-startup-format-guard#readme",
+  "bugs": {
+    "url": "https://github.com/BarbTheGreat/openclaw-startup-format-guard/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BarbTheGreat/openclaw-startup-format-guard.git"
+  },
+  "type": "module",
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "prompt",
+    "formatting",
+    "telegram",
+    "house-format",
+    "reply-contract"
+  ],
+  "files": [
+    "index.js",
+    "core.js",
+    "runtime.js",
+    "openclaw.plugin.json",
+    "README.md",
+    "LICENSE",
+    "examples"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./core": "./core.js",
+    "./runtime": "./runtime.js"
+  },
+  "scripts": {
+    "test": "node --test ./scripts/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.js"
+    ]
+  }
+}

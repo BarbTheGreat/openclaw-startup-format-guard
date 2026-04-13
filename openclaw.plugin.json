@@ -1,0 +1,67 @@
+{
+  "id": "startup-format-guard",
+  "name": "Startup Format Guard",
+  "description": "Reinforces configurable reply-format rules with prompt-time guidance plus a hardened outgoing rewrite fallback.",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable or disable the plugin."
+      },
+      "targetChannels": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Only inject guidance for these channel ids. Empty means all channels."
+      },
+      "applyOnFirstTurnOnly": {
+        "type": "boolean",
+        "default": true,
+        "description": "Only enforce guidance on early turns."
+      },
+      "initialMessageCountMax": {
+        "type": "integer",
+        "default": 2,
+        "minimum": 0,
+        "description": "Maximum prepared message count that still counts as an early turn."
+      },
+      "enforceOutgoingMessages": {
+        "type": "boolean",
+        "default": true,
+        "description": "Rewrite flat assistant text into the house format before write/send when enforcement is active."
+      },
+      "plainModeEscapeWords": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "If the current prompt contains one of these phrases, the plugin will skip both guidance injection and rewrite fallback."
+      },
+      "requiredOpening": {
+        "type": "string",
+        "description": "Required opening rule for the reply."
+      },
+      "requiredTakeaway": {
+        "type": "string",
+        "description": "Required takeaway rule placed near the top."
+      },
+      "listRule": {
+        "type": "string",
+        "description": "Rule for when to use bullets or numbering."
+      },
+      "disallowedPatterns": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "List of reply patterns to explicitly avoid."
+      },
+      "guidanceTitle": {
+        "type": "string",
+        "description": "Heading used inside the injected system guidance."
+      },
+      "customGuidance": {
+        "type": "string",
+        "description": "If provided, overrides the generated guidance body completely."
+      }
+    }
+  }
+}
